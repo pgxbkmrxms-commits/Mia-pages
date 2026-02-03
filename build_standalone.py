@@ -24,7 +24,7 @@ html.append('  <meta name="viewport" content="width=device-width, initial-scale=
 html.append('  <meta name="description" content="Ein liebevolles Valentinsgruß-Webpage — sag ihr, dass du sie magst!">')
 html.append('  <meta name="theme-color" content="#ffdceb">')
 html.append('  <meta name="apple-mobile-web-app-capable" content="yes">')
-html.append('  <title>Valentines Day</title>')
+html.append('  <title></title>')
 html.append('  <style>')
 html.append("    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}")
 html.append("    .gradient-background{background:linear-gradient(180deg,#ffd0e5 0%,#ffe8f2 36%,#fff 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}")
