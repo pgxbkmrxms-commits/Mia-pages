@@ -13,10 +13,14 @@
   <meta property="og:title" content="Willst du meine Freundin sein?">
   <meta property="og:description" content="Eine besondere Frage an eine besondere Person 💕">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="images/giphy.gif">
+  <meta property="og:url" content="https://pgxbkmrxms-commits.github.io/Mia-pages/mia-optimized.html">
+  <meta property="og:image" content="https://pgxbkmrxms-commits.github.io/Mia-pages/images/giphy.gif">
+  <meta property="og:image:width" content="250">
+  <meta property="og:image:height" content="250">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Willst du meine Freundin sein?">
   <meta name="twitter:description" content="Eine besondere Frage an eine besondere Person 💕">
+  <meta name="twitter:image" content="https://pgxbkmrxms-commits.github.io/Mia-pages/images/giphy.gif">
   <title>Willst du meine Freundin sein?</title>
   <link rel="preconnect" href="libs/" crossorigin>
   <link rel="dns-prefetch" href="libs/">
@@ -209,10 +213,17 @@
 
     button:hover:not(:disabled) {
       transform: translateY(-1px) scale(1.02);
+      animation: buttonPulse 1.5s ease-in-out infinite;
     }
 
     button:active:not(:disabled) {
       transform: translateY(0) scale(0.98);
+      animation: none;
+    }
+
+    @keyframes buttonPulse {
+      0%, 100% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); }
+      50% { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18); }
     }
 
     button:disabled {
@@ -642,10 +653,19 @@
         noButton.setAttribute("aria-disabled", "true");
         if (statusEl) { statusEl.textContent = "Okay, ich frage nicht mehr."; }
       }
+      // Intelligentes Prefetch: Lade nächstes Bild und finale Bild vor
       const nextIndex = Math.min(noClickCount + 1, finalIndex);
       if (nextIndex > noClickCount) {
         const img = new Image();
         img.src = imagePaths[nextIndex];
+      }
+      if (nextIndex !== finalIndex) {
+        const finalImg = new Image();
+        finalImg.src = imagePaths[finalIndex];
+      }
+      // Konfetti-Preload nach 2 Nein-Clicks
+      if (noClickCount >= 2 && !confettiLoading) {
+        loadConfetti().catch(() => {});
       }
     };
 
@@ -850,6 +870,17 @@
         logPerformance();
       } else {
         addListener(window, 'load', logPerformance);
+      }
+
+      // Register Service Worker for offline functionality
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js').then(() => {
+            console.log('Service Worker registered');
+          }).catch(() => {
+            console.log('Service Worker registration failed');
+          });
+        });
       }
     });
   </script>
