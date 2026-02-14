@@ -22,11 +22,9 @@
   <meta name="twitter:description" content="Eine besondere Frage an eine besondere Person 💕">
   <meta name="twitter:image" content="https://pgxbkmrxms-commits.github.io/Mia-pages/images/giphy.gif">
   <title>Willst du meine Freundin sein?</title>
-  <link rel="preconnect" href="libs/" crossorigin>
-  <link rel="dns-prefetch" href="libs/">
   <style>
     :root {
-      color-scheme: light;
+      color-scheme: light dark;
       --bg1: #ffd0e5;
       --bg2: #ffe8f2;
       --accent: #bd1e59;
@@ -47,7 +45,6 @@
       height: 100%;
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-      font-display: swap;
     }
 
     body {
@@ -186,6 +183,30 @@
       padding-top: 6px;
     }
 
+    .secret-input-wrap {
+      width: 100%;
+      margin-top: 4px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .secret-input {
+      width: min(220px, 100%);
+      border: 1px solid rgba(189, 30, 89, 0.25);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      text-align: center;
+      color: inherit;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .secret-input:focus-visible {
+      outline: 3px solid rgba(189, 30, 89, 0.35);
+      outline-offset: 2px;
+      border-color: rgba(189, 30, 89, 0.45);
+    }
+
     button {
       border: none;
       border-radius: 12px;
@@ -239,6 +260,10 @@
 
     #noButton {
       background: var(--no);
+    }
+
+    #maybeButton {
+      background: #f59e0b;
     }
 
     #resetButton {
@@ -334,6 +359,10 @@
         animation: none;
       }
 
+      .secret-card {
+        animation: none;
+      }
+
       .heart {
         animation: none;
         opacity: 0.25;
@@ -371,9 +400,68 @@
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
       }
+
+      .secret-input {
+        background: rgba(29, 18, 24, 0.75);
+        border-color: rgba(255, 127, 176, 0.35);
+      }
     }
 
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 1px, 1px); white-space: nowrap; border: 0; }
+
+    .visually-hidden.is-visible {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0;
+      clip: auto;
+      overflow: visible;
+      white-space: normal;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .secret-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 10, 16, 0.55);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      z-index: 10;
+    }
+
+    .secret-overlay[hidden] {
+      display: none !important;
+    }
+
+    .secret-card {
+      background: var(--card);
+      color: inherit;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow);
+      animation: popIn var(--transition-slow) var(--easing) both;
+    }
+
+    .secret-card h2 {
+      margin: 0 0 8px;
+      color: var(--accent);
+    }
+
+    .secret-card p {
+      margin: 0 0 14px;
+    }
+
+    .secret-close {
+      background: #ec4899;
+      padding: 10px 16px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body class="gradient-background">
@@ -388,19 +476,31 @@
     <span class="heart" style="left: 92%; animation-delay: 7s; animation-duration: 17s;"></span>
   </div>
   <main class="card" aria-labelledby="valentineQuestion" id="card">
-    <div id="status" role="status" aria-live="polite" class="visually-hidden"></div>
-    <img id="imageDisplay" src="images/giphy.gif" alt="Niedliche animierte Grafik zum Valentinstag" width="250" height="250" loading="lazy" decoding="async" fetchpriority="auto" />
+    <div id="status" role="status" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+    <img id="imageDisplay" src="images/giphy.gif" alt="Niedliche animierte Grafik zum Valentinstag" width="250" height="250" loading="eager" decoding="async" fetchpriority="high" />
     <h1 id="valentineQuestion">Willst du meine Freundin sein?</h1>
     <p class="subtext" id="subtext">Ein kleines Ja macht meinen Tag perfekt.</p>
-    <p class="hint" id="hint">Tipp: Mit Y/N geht's noch schneller. <span aria-hidden="true">Oder wische nach rechts/links!</span></p>
+    <p class="hint" id="hint">Tipp: Mit Y/N/P geht's noch schneller. <span aria-hidden="true">Oder wische nach rechts/links! Geheimcode: unten einfach „mia“ eintippen.</span></p>
     <div class="buttons" id="responseButtons" role="group" aria-label="Antwortoptionen">
       <button id="yesButton" class="bounce" aria-label="Ja" type="button">Ja</button>
+      <button id="maybeButton" aria-label="Vielleicht" type="button">Vielleicht</button>
       <button id="noButton" aria-label="Nein" type="button">Nein</button>
     </div>
     <div class="actions" id="afterActions" hidden>
       <button id="resetButton" type="button" aria-label="Von vorne beginnen">Nochmal 🔄</button>
     </div>
+    <div class="secret-input-wrap">
+      <label for="secretInput" class="visually-hidden">Geheimen Code eingeben</label>
+      <input id="secretInput" class="secret-input" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="16" placeholder="geheimer code…" aria-label="Geheimen Code eingeben" />
+    </div>
   </main>
+  <div id="secretOverlay" class="secret-overlay" hidden aria-hidden="true">
+    <div class="secret-card" role="dialog" aria-modal="true" aria-labelledby="secretTitle" aria-describedby="secretText">
+      <h2 id="secretTitle">Du hast das geheime Level gefunden 💖</h2>
+      <p id="secretText">Du bist mein Lieblingsmensch. Für immer und jeden Tag ein bisschen mehr.</p>
+      <button id="secretCloseButton" class="secret-close" type="button" aria-label="Geheime Nachricht schließen">Awww 🥰</button>
+    </div>
+  </div>
   <noscript>Bitte aktiviere JavaScript, damit die Interaktionen funktionieren.</noscript>
 
   <script>
@@ -420,13 +520,63 @@
       HAPTIC_LIGHT: 10,
       HAPTIC_MEDIUM: 20,
       HAPTIC_HEAVY: 50,
-      SWIPE_THRESHOLD: 50
+      SWIPE_THRESHOLD: 50,
+      STATE_MAX_AGE_MS: 3600000,
+      STATUS_CLEAR_MS: 2800,
+      SHAKE_RESET_DELAY_MS: 320,
+      SECRET_CODE: 'mia'
     };
 
     // Haptic Feedback
     const hapticFeedback = (intensity = CONFIG.HAPTIC_LIGHT) => {
       if ('vibrate' in navigator) {
         navigator.vibrate(intensity);
+      }
+    };
+
+    let audioContext = null;
+    const getAudioContext = () => {
+      if (audioContext) {
+        return audioContext;
+      }
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        return null;
+      }
+      audioContext = new AudioContextClass();
+      return audioContext;
+    };
+
+    const playCuteChime = () => {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(0.06, now + 0.02);
+        master.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+        master.connect(ctx.destination);
+
+        [523.25, 659.25, 783.99].forEach((freq, index) => {
+          const start = now + index * 0.12;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(0.28, start + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.26);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(start);
+          osc.stop(start + 0.3);
+        });
+      } catch (e) {
+        // ignore audio errors
       }
     };
 
@@ -470,7 +620,7 @@
         if (saved) {
           const state = JSON.parse(saved);
           const age = Date.now() - (state.timestamp || 0);
-          if (age < 3600000) return state;
+          if (age < CONFIG.STATE_MAX_AGE_MS) return state;
         }
       } catch (e) {
         console.warn('Failed to load state:', e);
@@ -486,18 +636,28 @@
       }
     };
 
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    const setStatus = (message, { isError = false, persist = false } = {}) => {
+      if (!statusEl) {
+        return;
+      }
+      statusEl.textContent = message;
+      statusEl.classList.toggle('is-visible', !!message);
+      statusEl.style.color = isError ? '#ef4444' : '';
+      if (!persist && message) {
+        setTimeout(() => {
+          if (!statusEl) return;
+          statusEl.textContent = '';
+          statusEl.classList.remove('is-visible');
+          statusEl.style.color = '';
+        }, CONFIG.STATUS_CLEAR_MS);
+      }
+    };
+
     // Error boundary
     const showError = (message) => {
-      const statusEl = document.getElementById('status');
-      if (statusEl) {
-        statusEl.textContent = message;
-        statusEl.style.position = 'relative';
-        statusEl.style.color = '#ef4444';
-        setTimeout(() => {
-          statusEl.textContent = '';
-          statusEl.style.position = 'absolute';
-        }, 3000);
-      }
+      setStatus(message, { isError: true });
     };
 
     window.addEventListener('error', (event) => {
@@ -521,6 +681,10 @@
         element.removeEventListener(event, handler, options);
       });
       listeners.length = 0;
+      if (heartsObserver) {
+        heartsObserver.disconnect();
+        heartsObserver = null;
+      }
     };
 
     const getById = (id) => document.getElementById(id);
@@ -554,6 +718,12 @@
       "Warum nicht :("
     ];
 
+    const maybeTexts = [
+      "Vielleicht? Ich nehm's als süßes Fast-Ja 💕",
+      "Ich warte gern auf dein Ja 🫶",
+      "Du bist jede Sekunde Warten wert ✨"
+    ];
+
     const finalIndex = imagePaths.length - 1;
     const maxNoClicks = Math.min(noTexts.length - 1, finalIndex);
     let confettiLoading = null;
@@ -564,6 +734,8 @@
     let didPreload = false;
     let didFallback = false;
     let statusEl = null;
+    let heartsObserver = null;
+    let maybeClickCount = 0;
 
     const setImage = (imageDisplay, src, alt) => {
       const currentSrc = imageDisplay.src.split('?')[0];
@@ -638,8 +810,10 @@
       setImage(imageDisplay, imagePaths[noClickCount], imageAlts[noClickCount] || imageAlts[0]);
       if (card) {
         card.classList.remove("shake");
-        void card.offsetWidth;
-        card.classList.add("shake");
+        requestAnimationFrame(() => {
+          card.classList.add("shake");
+          setTimeout(() => card.classList.remove("shake"), CONFIG.SHAKE_RESET_DELAY_MS);
+        });
       }
       buttonWidth += CONFIG.BUTTON_GROW_WIDTH;
       buttonHeight += CONFIG.BUTTON_GROW_HEIGHT;
@@ -647,11 +821,11 @@
       updateYesButton(yesButton);
       noButton.textContent = noTexts[noClickCount];
       saveState();
-      if (statusEl) { statusEl.textContent = `Du hast "${noButton.textContent}" gewählt.`; }
+      setStatus(`Du hast "${noButton.textContent}" gewählt.`);
       if (noClickCount >= maxNoClicks) {
         noButton.disabled = true;
         noButton.setAttribute("aria-disabled", "true");
-        if (statusEl) { statusEl.textContent = "Okay, ich frage nicht mehr."; }
+        setStatus("Okay, ich frage nicht mehr.", { persist: true });
       }
       // Intelligentes Prefetch: Lade nächstes Bild und finale Bild vor
       const nextIndex = Math.min(noClickCount + 1, finalIndex);
@@ -669,15 +843,31 @@
       }
     };
 
+    const handleMaybe = (subtext, card) => {
+      hapticFeedback(CONFIG.HAPTIC_LIGHT);
+      playCuteChime();
+      const text = maybeTexts[Math.min(maybeClickCount, maybeTexts.length - 1)];
+      maybeClickCount += 1;
+      if (subtext) {
+        subtext.textContent = text;
+      }
+      setStatus(text);
+      if (card) {
+        card.classList.add('swipe-feedback');
+        setTimeout(() => card.classList.remove('swipe-feedback'), 300);
+      }
+    };
+
     const handleYes = (valentineQuestion, responseButtons, imageDisplay, subtext, hint, afterActions) => {
       hapticFeedback(CONFIG.HAPTIC_HEAVY);
+      playCuteChime();
       setImage(imageDisplay, imagePaths[finalIndex], "Jubelndes GIF – Danke für dein Ja!");
       valentineQuestion.textContent = "Yayyy!! :3";
       valentineQuestion.setAttribute("tabindex", "-1");
       valentineQuestion.focus({ preventScroll: true });
       if (subtext) { subtext.textContent = "Du hast mir ein Lächeln geschenkt."; }
       if (hint) { hint.style.display = "none"; }
-      if (statusEl) { statusEl.textContent = "Danke für dein Ja!"; }
+      setStatus("Danke für dein Ja!", { persist: true });
       responseButtons.style.display = "none";
       if (afterActions) { afterActions.hidden = false; }
       clearState();
@@ -701,6 +891,15 @@
       }
     };
 
+    const handleSecretCodeInput = (value, openSecretOverlay) => {
+      const normalized = String(value || '').toLowerCase().replace(/[^a-z]/g, '');
+      if (normalized === CONFIG.SECRET_CODE) {
+        openSecretOverlay();
+        return true;
+      }
+      return false;
+    };
+
     const preloadOnFirstInteraction = () => {
       if (didPreload || !shouldPreload()) {
         return;
@@ -721,6 +920,7 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       const yesButton = getById("yesButton");
+      const maybeButton = getById("maybeButton");
       const noButton = getById("noButton");
       const valentineQuestion = getById("valentineQuestion");
       const responseButtons = getById("responseButtons");
@@ -729,21 +929,51 @@
       const hint = getById("hint");
       const afterActions = getById("afterActions");
       const resetButton = getById("resetButton");
+      const secretInput = getById('secretInput');
       const card = getById("card");
+      const secretOverlay = getById('secretOverlay');
+      const secretCloseButton = getById('secretCloseButton');
       statusEl = getById("status");
 
-      if (!yesButton || !noButton || !valentineQuestion || !responseButtons || !imageDisplay) {
+      if (!yesButton || !maybeButton || !noButton || !valentineQuestion || !responseButtons || !imageDisplay) {
         console.error("Required elements not found");
         return;
       }
 
+      if (secretInput) {
+        secretInput.value = '';
+      }
+
+      const openSecretOverlay = () => {
+        if (!secretOverlay) return;
+        secretOverlay.hidden = false;
+        secretOverlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        playCuteChime();
+        setStatus('Geheime Nachricht freigeschaltet 💖', { persist: true });
+        if (secretInput) {
+          secretInput.value = '';
+        }
+        if (secretCloseButton) {
+          secretCloseButton.focus({ preventScroll: true });
+        }
+      };
+
+      const closeSecretOverlay = () => {
+        if (!secretOverlay) return;
+        secretOverlay.hidden = true;
+        secretOverlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        yesButton.focus({ preventScroll: true });
+      };
+
       // Load saved state
       const savedState = loadState();
       if (savedState) {
-        noClickCount = savedState.noClickCount || 0;
-        buttonWidth = savedState.buttonWidth || yesButton.offsetWidth || 120;
-        buttonHeight = savedState.buttonHeight || yesButton.offsetHeight || 44;
-        fontSize = savedState.fontSize || parseFloat(getComputedStyle(yesButton).fontSize) || 20;
+        noClickCount = clamp(Number(savedState.noClickCount) || 0, 0, maxNoClicks);
+        buttonWidth = clamp(Number(savedState.buttonWidth) || yesButton.offsetWidth || 120, 120, 420);
+        buttonHeight = clamp(Number(savedState.buttonHeight) || yesButton.offsetHeight || 44, 44, CONFIG.MAX_BUTTON_HEIGHT);
+        fontSize = clamp(Number(savedState.fontSize) || parseFloat(getComputedStyle(yesButton).fontSize) || 20, 16, CONFIG.MAX_FONT_SIZE);
         if (noClickCount > 0) {
           setImage(imageDisplay, imagePaths[noClickCount], imageAlts[noClickCount]);
           updateYesButton(yesButton);
@@ -763,7 +993,7 @@
       // Intersection Observer for hearts animation
       const heartsContainer = document.querySelector('.hearts');
       if (heartsContainer && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        const heartsObserver = new IntersectionObserver((entries) => {
+        heartsObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             heartsContainer.classList.toggle('paused', !entry.isIntersecting);
           });
@@ -781,7 +1011,27 @@
       });
 
       addListener(noButton, "click", () => handleNo(yesButton, noButton, imageDisplay, card));
+      addListener(maybeButton, "click", () => handleMaybe(subtext, card));
       addListener(yesButton, "click", () => handleYes(valentineQuestion, responseButtons, imageDisplay, subtext, hint, afterActions));
+      if (secretCloseButton) {
+        addListener(secretCloseButton, 'click', closeSecretOverlay);
+      }
+      if (secretOverlay) {
+        addListener(secretOverlay, 'click', (event) => {
+          if (event.target === secretOverlay) {
+            closeSecretOverlay();
+          }
+        });
+      }
+      if (secretInput) {
+        addListener(secretInput, 'keyup', (event) => {
+          const inputEl = event.target;
+          if (!inputEl || typeof inputEl.value !== 'string') return;
+          if (handleSecretCodeInput(inputEl.value, openSecretOverlay)) {
+            inputEl.value = '';
+          }
+        });
+      }
       if (resetButton) {
         addListener(resetButton, "click", () => {
           clearState();
@@ -798,6 +1048,26 @@
       const KEY_DEBOUNCE = 200;
       
       addListener(document, "keydown", (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) {
+          return;
+        }
+
+        const key = event.key.toLowerCase();
+
+        if (secretOverlay && !secretOverlay.hidden) {
+          if (key === 'escape') {
+            event.preventDefault();
+            closeSecretOverlay();
+          }
+          return;
+        }
+
+        const target = event.target;
+        const isTypingTarget = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target && target.isContentEditable);
+        if (isTypingTarget) {
+          return;
+        }
+
         if (responseButtons.style.display === "none") {
           return;
         }
@@ -807,11 +1077,14 @@
           return;
         }
         
-        const key = event.key.toLowerCase();
         if (key === "y" || key === "j") {
           event.preventDefault();
           lastKeyTime = now;
           yesButton.click();
+        } else if (key === "p") {
+          event.preventDefault();
+          lastKeyTime = now;
+          maybeButton.click();
         } else if (key === "n") {
           event.preventDefault();
           lastKeyTime = now;
@@ -833,6 +1106,10 @@
       addListener(window, 'beforeunload', () => {
         cleanup();
       });
+
+      addListener(window, 'resize', () => {
+        updateYesButton(yesButton);
+      }, { passive: true });
 
       // Touch gestures for mobile
       let touchStartX = 0;
@@ -875,7 +1152,7 @@
       // Register Service Worker for offline functionality
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js').then(() => {
+          navigator.serviceWorker.register('./sw.js', { scope: './' }).then(() => {
             console.log('Service Worker registered');
           }).catch(() => {
             console.log('Service Worker registration failed');

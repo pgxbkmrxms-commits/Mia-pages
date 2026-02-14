@@ -1,71 +1,118 @@
 // Service Worker for Offline Functionality
-const CACHE_NAME = 'mia-pages-v1';
-const urlsToCache = [
-  '/Mia-pages/mia-optimized.html',
-  '/Mia-pages/images/giphy.gif',
-  '/Mia-pages/images/image2.gif',
-  '/Mia-pages/images/image3.gif',
-  '/Mia-pages/images/image4.gif',
-  '/Mia-pages/images/image5.gif',
-  '/Mia-pages/images/image6.gif',
-  '/Mia-pages/images/image7.gif',
-  '/Mia-pages/libs/confetti.min.js'
+const CACHE_NAME = 'mia-pages-v3';
+const OFFLINE_PAGE = './mia-optimized.html';
+const NAVIGATION_NETWORK_TIMEOUT_MS = 4000;
+const PRECACHE_ASSETS = [
+  './mia-optimized.html',
+  './images/giphy.gif',
+  './images/image2.gif',
+  './images/image3.gif',
+  './images/image4.gif',
+  './images/image5.gif',
+  './images/image6.gif',
+  './images/image7.gif',
+  './libs/confetti.min.js'
 ];
 
-// Install event - cache resources
+const isCacheable = (response) => response && response.ok && (response.type === 'basic' || response.type === 'default');
+
+const networkWithTimeout = async (request, timeoutMs = NAVIGATION_NETWORK_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(request, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const networkFirst = async (request) => {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const networkResponse = await networkWithTimeout(request);
+    if (isCacheable(networkResponse)) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    const cached = await cache.match(request);
+    return cached || cache.match(OFFLINE_PAGE);
+  }
+};
+
+const staleWhileRevalidate = async (request) => {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+
+  const networkPromise = fetch(request)
+    .then((response) => {
+      if (isCacheable(response)) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    networkPromise.catch(() => undefined);
+    return cached;
+  }
+
+  const networkResponse = await networkPromise;
+  if (networkResponse) {
+    return networkResponse;
+  }
+
+  return cache.match(OFFLINE_PAGE);
+};
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Cache opened');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((err) => {
-        console.log('Cache failed:', err);
-      })
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
+      .catch(() => undefined)
   );
 });
 
-// Fetch event - serve from cache if available
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        // Clone the request
-        const fetchRequest = event.request.clone();
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          // Clone the response
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          return response;
-        });
-      })
-  );
-});
-
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) => Promise.all(cacheNames.map((cacheName) => (cacheName !== CACHE_NAME ? caches.delete(cacheName) : undefined))))
+      .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  const requestUrl = new URL(request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  if (request.mode === 'navigate' || request.destination === 'document') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  if (request.destination === 'image' || requestUrl.pathname.endsWith('.gif')) {
+    event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
+  if (requestUrl.pathname.endsWith('/libs/confetti.min.js')) {
+    event.respondWith(staleWhileRevalidate(request));
+  }
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
