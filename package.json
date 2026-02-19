@@ -1,0 +1,29 @@
+{
+  "name": "mia-pages",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "test": "npm run test:unit",
+    "test:unit": "node --test",
+    "test:e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
+    "lint:html": "html-validate",
+    "check:sw": "node --check sw.js",
+    "precommit": "lint-staged && npm run test:unit"
+  },
+  "lint-staged": {
+    "*.html": "html-validate",
+    "sw.js": "node --check sw.js",
+    "assets/**/*.js": "node --check",
+    "assets/**/*.mjs": "node --check",
+    "tests/**/*.mjs": "node --check"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "html-validate": "10.8.0",
+    "husky": "9.1.7",
+    "lint-staged": "15.5.2"
+  }
+}

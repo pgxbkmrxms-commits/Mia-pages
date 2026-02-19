@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Worker Debug</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 24px; background: #fff7fb; color: #2b0f1b; }
+    h1 { margin-top: 0; color: #bd1e59; }
+    .wrap { max-width: 760px; margin: 0 auto; background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    .buttons { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 16px; }
+    button { border: 0; border-radius: 10px; padding: 10px 14px; background: #ec4899; color: #fff; cursor: pointer; }
+    button.secondary { background: #6366f1; }
+    button.warn { background: #ef4444; }
+    pre { background: #1f1720; color: #f8e9f1; border-radius: 10px; padding: 12px; overflow: auto; min-height: 140px; }
+    a { color: #bd1e59; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Service Worker Debug</h1>
+    <p>Diese Seite hilft beim manuellen Testen von Update- und Cache-Flow.</p>
+    <p><a href="mia-optimized.html">Zurück zur App</a></p>
+
+    <div class="buttons">
+      <button id="btnRegister" type="button">Registrieren</button>
+      <button id="btnUpdate" class="secondary" type="button">Update prüfen</button>
+      <button id="btnSkipWaiting" class="secondary" type="button">Skip Waiting senden</button>
+      <button id="btnClearCaches" class="warn" type="button">Caches löschen</button>
+      <button id="btnUnregister" class="warn" type="button">Alle SW abmelden</button>
+      <button id="btnState" type="button">Status aktualisieren</button>
+    </div>
+
+    <pre id="log" aria-live="polite"></pre>
+  </main>
+
+  <script>
+    const debugParams = new URLSearchParams(window.location.search);
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isDebugAllowed = debugParams.get('debug') === '1';
+
+    if (!isLocalhost && !isDebugAllowed) {
+      document.body.innerHTML = '<main class="wrap"><h1>Debug-Seite deaktiviert</h1><p>Diese Seite ist nur lokal oder mit <strong>?debug=1</strong> verfügbar.</p><p><a href="mia-optimized.html">Zurück zur App</a></p></main>';
+      throw new Error('SW debug page disabled outside dev mode.');
+    }
+
+    const logEl = document.getElementById('log');
+    const log = (msg) => {
+      const time = new Date().toLocaleTimeString();
+      logEl.textContent += `[${time}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+
+    const getRegistration = async () => {
+      if (!('serviceWorker' in navigator)) {
+        throw new Error('Service Worker wird von diesem Browser nicht unterstützt.');
+      }
+      return navigator.serviceWorker.getRegistration('./');
+    };
+
+    const renderStatus = async () => {
+      try {
+        const reg = await getRegistration();
+        const state = {
+          controller: !!navigator.serviceWorker.controller,
+          hasRegistration: !!reg,
+          installing: !!(reg && reg.installing),
+          waiting: !!(reg && reg.waiting),
+          active: !!(reg && reg.active)
+        };
+        log(`Status: ${JSON.stringify(state)}`);
+      } catch (err) {
+        log(`Statusfehler: ${err.message}`);
+      }
+    };
+
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+        log(`Registriert: scope=${reg.scope}`);
+        await renderStatus();
+      } catch (err) {
+        log(`Registrierung fehlgeschlagen: ${err.message}`);
+      }
+    });
+
+    document.getElementById('btnUpdate').addEventListener('click', async () => {
+      try {
+        const reg = await getRegistration();
+        if (!reg) {
+          log('Kein Service Worker registriert.');
+          return;
+        }
+        await reg.update();
+        log('Update-Check angestoßen.');
+        await renderStatus();
+      } catch (err) {
+        log(`Update fehlgeschlagen: ${err.message}`);
+      }
+    });
+
+    document.getElementById('btnSkipWaiting').addEventListener('click', async () => {
+      try {
+        const reg = await getRegistration();
+        if (!reg || !reg.waiting) {
+          log('Kein wartender Worker vorhanden.');
+          return;
+        }
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        log('SKIP_WAITING gesendet.');
+      } catch (err) {
+        log(`Skip Waiting fehlgeschlagen: ${err.message}`);
+      }
+    });
+
+    document.getElementById('btnClearCaches').addEventListener('click', async () => {
+      try {
+        const names = await caches.keys();
+        await Promise.all(names.map((name) => caches.delete(name)));
+        log(`Caches gelöscht: ${names.join(', ') || 'keine'}`);
+      } catch (err) {
+        log(`Cache-Löschen fehlgeschlagen: ${err.message}`);
+      }
+    });
+
+    document.getElementById('btnUnregister').addEventListener('click', async () => {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((reg) => reg.unregister()));
+        log(`Abgemeldet: ${regs.length} Registrierung(en)`);
+        await renderStatus();
+      } catch (err) {
+        log(`Abmelden fehlgeschlagen: ${err.message}`);
+      }
+    });
+
+    document.getElementById('btnState').addEventListener('click', renderStatus);
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      log('controllerchange erkannt. Seite wurde mit neuem Worker übernommen.');
+    });
+
+    renderStatus();
+  </script>
+</body>
+</html>

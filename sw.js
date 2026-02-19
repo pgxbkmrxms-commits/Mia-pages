@@ -1,9 +1,16 @@
 // Service Worker for Offline Functionality
-const CACHE_NAME = 'mia-pages-v3';
+const CACHE_NAME = 'mia-pages-v7';
 const OFFLINE_PAGE = './mia-optimized.html';
 const NAVIGATION_NETWORK_TIMEOUT_MS = 4000;
 const PRECACHE_ASSETS = [
   './mia-optimized.html',
+  './assets/mia-optimized.css',
+  './assets/mia-optimized.js',
+  './assets/mia-logic.mjs',
+  './manifest.webmanifest',
+  './images/icons/apple-touch-icon-180.png',
+  './images/icons/icon-192.png',
+  './images/icons/icon-512.png',
   './images/giphy.gif',
   './images/image2.gif',
   './images/image3.gif',
@@ -102,6 +109,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (request.destination === 'image' || requestUrl.pathname.endsWith('.gif')) {
+    event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
+  if (request.destination === 'script' || request.destination === 'style' || requestUrl.pathname.endsWith('.mjs')) {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }

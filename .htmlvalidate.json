@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "html-validate:recommended"
+  ],
+  "rules": {
+    "void-style": "off",
+    "no-redundant-aria-label": "off",
+    "no-inline-style": "off"
+  }
+}

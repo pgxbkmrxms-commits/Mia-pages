@@ -1,0 +1,164 @@
+name: Quality Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only
+          fi
+          npm ci
+
+      - name: Detect changed HTML files
+        id: changed-html
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            **/*.html
+
+      - name: Lint changed HTML files
+        if: steps.changed-html.outputs.any_changed == 'true'
+        run: npm run lint:html -- ${{ steps.changed-html.outputs.all_changed_files }}
+
+      - name: No HTML changes
+        if: steps.changed-html.outputs.any_changed != 'true'
+        run: echo "No changed HTML files. Skipping HTML lint."
+
+      - name: Check Service Worker syntax
+        run: npm run check:sw
+
+      - name: Run unit tests
+        run: npm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only
+          fi
+          npm ci
+
+      - name: Detect E2E-relevant changes
+        id: changed-e2e
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            mia-optimized.html
+            assets/**
+            sw.js
+            manifest.webmanifest
+            tests/e2e/**
+            playwright.config.mjs
+
+      - name: Install browser
+        if: steps.changed-e2e.outputs.any_changed == 'true'
+        run: npm run e2e:install
+
+      - name: Run E2E tests
+        if: steps.changed-e2e.outputs.any_changed == 'true'
+        run: npm run test:e2e
+
+      - name: No E2E-relevant changes
+        if: steps.changed-e2e.outputs.any_changed != 'true'
+        run: echo "No relevant app changes. Skipping E2E tests."
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only
+          fi
+          npm ci
+
+      - name: Detect Lighthouse-relevant changes
+        id: changed-lh
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            mia-optimized.html
+            sw.js
+            manifest.webmanifest
+            assets/**
+            images/**
+            libs/**
+
+      - name: Start local static server
+        if: steps.changed-lh.outputs.any_changed == 'true'
+        run: python3 -m http.server 4173 &
+
+      - name: Wait for local server
+        if: steps.changed-lh.outputs.any_changed == 'true'
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/mia-optimized.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server did not become ready in time" >&2
+          exit 1
+
+      - name: Run Lighthouse
+        if: steps.changed-lh.outputs.any_changed == 'true'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://127.0.0.1:4173/mia-optimized.html
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: No Lighthouse-relevant changes
+        if: steps.changed-lh.outputs.any_changed != 'true'
+        run: echo "No relevant frontend changes. Skipping Lighthouse."
