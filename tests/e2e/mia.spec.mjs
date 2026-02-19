@@ -12,8 +12,8 @@ test('main page renders key controls', async ({ page }) => {
 test('maybe updates subtext and yes completes flow', async ({ page }) => {
   await page.goto('/mia-optimized.html');
 
-  const maybeButton = page.getByRole('button', { name: /Vielleicht/i });
-  const yesButton = page.getByRole('button', { name: 'Ja' });
+  const maybeButton = page.locator('#maybeButton');
+  const yesButton = page.locator('#yesButton');
   const subtext = page.locator('#subtext');
 
   const initialText = await subtext.textContent();
@@ -23,4 +23,33 @@ test('maybe updates subtext and yes completes flow', async ({ page }) => {
   await yesButton.click();
   await expect(page.getByRole('heading', { name: 'Yayyy!! :3' })).toBeVisible();
   await expect(page.locator('#responseButtons')).toBeHidden();
+});
+
+test('keyboard shortcuts work for no and yes', async ({ page }) => {
+  await page.goto('/mia-optimized.html');
+
+  const noButton = page.locator('#noButton');
+  const question = page.locator('#valentineQuestion');
+
+  await page.keyboard.press('n');
+  await expect(noButton).toHaveText(/Bist du dir sicher\?/);
+
+  await page.waitForTimeout(250);
+  await page.keyboard.press('y');
+  await expect(question).toHaveText('Yayyy!! :3');
+});
+
+test('secret code opens and closes overlay', async ({ page }) => {
+  await page.goto('/mia-optimized.html');
+
+  const input = page.locator('#secretInput');
+  const overlay = page.locator('#secretOverlay');
+
+  await input.click();
+  await input.type('mia');
+  await expect(overlay).toHaveAttribute('aria-hidden', 'false');
+  await expect(overlay).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(overlay).toBeHidden();
 });

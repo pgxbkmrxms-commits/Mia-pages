@@ -1,4 +1,5 @@
 import { clamp, createShuffledCycler, matchesSecretCode, normalizeSecretCode } from './mia-logic.mjs';
+import { createTelemetry } from './mia-observability.mjs';
 
 // Configuration constants
 const CONFIG = {
@@ -151,61 +152,6 @@ const clearState = () => {
   }
 };
 
-const getErrorTelemetry = () => {
-  try {
-    const raw = localStorage.getItem(CONFIG.TELEMETRY_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    return [];
-  }
-};
-
-const saveErrorTelemetry = (entries) => {
-  try {
-    localStorage.setItem(CONFIG.TELEMETRY_STORAGE_KEY, JSON.stringify(entries));
-  } catch (e) {
-    logDebug('Telemetry save failed', e);
-  }
-};
-
-const clearErrorTelemetry = () => {
-  try {
-    localStorage.removeItem(CONFIG.TELEMETRY_STORAGE_KEY);
-  } catch (e) {
-    logDebug('Telemetry clear failed', e);
-  }
-};
-
-const toTelemetryText = (value) => {
-  if (value == null) return null;
-  if (typeof value === 'string') return value;
-  if (value instanceof Error) {
-    return `${value.name}: ${value.message}`;
-  }
-  try {
-    return JSON.stringify(value);
-  } catch (e) {
-    return String(value);
-  }
-};
-
-const recordErrorTelemetry = (type, data = {}) => {
-  if (!CONFIG.ENABLE_ERROR_TELEMETRY) {
-    return;
-  }
-  const entries = getErrorTelemetry();
-  entries.push({
-    type,
-    time: new Date().toISOString(),
-    path: window.location.pathname,
-    ...data
-  });
-  const trimmed = entries.slice(-CONFIG.TELEMETRY_MAX_ITEMS);
-  saveErrorTelemetry(trimmed);
-};
-
 const runRegressionChecks = () => {
   const checks = [];
   const assert = (condition, label) => {
@@ -234,52 +180,6 @@ const runRegressionChecks = () => {
   } else {
     logDebug('Regression checks passed:', checks.length);
   }
-};
-
-const createDebugTelemetryPanel = () => {
-  if (!CONFIG.DEBUG) {
-    return;
-  }
-
-  const panel = document.createElement('div');
-  panel.setAttribute('role', 'region');
-  panel.setAttribute('aria-label', 'Debugwerkzeuge');
-  panel.className = 'debug-panel';
-
-  const makeButton = (label) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = label;
-    btn.className = 'debug-panel-button';
-    return btn;
-  };
-
-  const exportButton = makeButton('Telemetry kopieren');
-  exportButton.addEventListener('click', async () => {
-    const entries = getErrorTelemetry();
-    const payload = JSON.stringify(entries, null, 2);
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(payload);
-      } else {
-        throw new Error('Clipboard API unavailable');
-      }
-      setStatus(`Telemetry kopiert (${entries.length} Einträge).`);
-    } catch (e) {
-      setStatus('Kopieren fehlgeschlagen – siehe Konsole.', { isError: true });
-      console.warn('Telemetry copy failed:', e, payload);
-    }
-  });
-
-  const clearButton = makeButton('Telemetry leeren');
-  clearButton.addEventListener('click', () => {
-    clearErrorTelemetry();
-    setStatus('Telemetry geleert.');
-  });
-
-  panel.appendChild(exportButton);
-  panel.appendChild(clearButton);
-  document.body.appendChild(panel);
 };
 
 let statusClearTimeoutId = null;
@@ -311,29 +211,13 @@ const showError = (message) => {
   setStatus(message, { isError: true });
 };
 
-window.addEventListener('error', (event) => {
-  console.error('Global error:', event.error);
-  recordErrorTelemetry('error', {
-    message: toTelemetryText(event.message || event.error),
-    source: toTelemetryText(event.filename),
-    line: event.lineno || null,
-    column: event.colno || null,
-    stack: toTelemetryText(event.error && event.error.stack)
-  });
-  showError('Ein Fehler ist aufgetreten. Bitte Seite neu laden.');
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-  console.error('Unhandled promise rejection:', event.reason);
-  recordErrorTelemetry('unhandledrejection', {
-    reason: toTelemetryText(event.reason)
-  });
-});
+const telemetry = createTelemetry(CONFIG, { setStatus, logDebug });
+telemetry.installGlobalHandlers({ onFatalError: showError });
 
 if (CONFIG.DEBUG) {
   window.__miaDebug = {
-    getErrorTelemetry,
-    clearErrorTelemetry,
+    getErrorTelemetry: telemetry.getErrorTelemetry,
+    clearErrorTelemetry: telemetry.clearErrorTelemetry,
     runRegressionChecks
   };
 }
@@ -937,7 +821,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (CONFIG.DEBUG) {
     runRegressionChecks();
-    createDebugTelemetryPanel();
+    telemetry.createDebugTelemetryPanel();
   }
 
   // Register Service Worker for offline functionality

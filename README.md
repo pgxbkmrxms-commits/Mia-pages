@@ -10,6 +10,7 @@ Changelog: [CHANGELOG.md](CHANGELOG.md)
 - [assets/mia-optimized.css](assets/mia-optimized.css): ausgelagerte Styles
 - [assets/mia-optimized.js](assets/mia-optimized.js): ausgelagerte App-Logik
 - [assets/mia-logic.mjs](assets/mia-logic.mjs): geteilte, pure Hilfslogik (für App + Tests)
+- [assets/mia-observability.mjs](assets/mia-observability.mjs): Telemetrie-, Debug-Panel- und Error-Handler-Modul
 - [tests/mia-logic.test.mjs](tests/mia-logic.test.mjs): Node-Testsuite für pure Logik
 - [tests/e2e/mia.spec.mjs](tests/e2e/mia.spec.mjs): Playwright End-to-End Tests
 - [playwright.config.mjs](playwright.config.mjs): Playwright-Konfiguration
@@ -51,6 +52,10 @@ Die Seite ist nur auf `localhost` oder mit Query-Parameter `?debug=1` aktiv.
 
 Deployment läuft über GitHub Pages Workflow in [.github/workflows/pages.yml](.github/workflows/pages.yml).
 Zusätzlich läuft ein Qualitäts-Workflow inkl. Lighthouse in [.github/workflows/quality.yml](.github/workflows/quality.yml).
+Bei fehlschlagenden E2E-Tests werden Playwright-Artefakte als CI-Artifact hochgeladen.
+
+
+
 
 
 

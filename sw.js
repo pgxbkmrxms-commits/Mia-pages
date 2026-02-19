@@ -1,5 +1,5 @@
 // Service Worker for Offline Functionality
-const CACHE_NAME = 'mia-pages-v7';
+const CACHE_NAME = 'mia-pages-v8';
 const OFFLINE_PAGE = './mia-optimized.html';
 const NAVIGATION_NETWORK_TIMEOUT_MS = 4000;
 const PRECACHE_ASSETS = [
@@ -7,6 +7,7 @@ const PRECACHE_ASSETS = [
   './assets/mia-optimized.css',
   './assets/mia-optimized.js',
   './assets/mia-logic.mjs',
+  './assets/mia-observability.mjs',
   './manifest.webmanifest',
   './images/icons/apple-touch-icon-180.png',
   './images/icons/icon-192.png',
