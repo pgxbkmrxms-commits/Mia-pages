@@ -3,8 +3,10 @@
   --bg1: #ffd0e5;
   --bg2: #ffe8f2;
   --accent: #bd1e59;
-  --yes: #16a34a;
-  --no: #ef4444;
+  --yes: #15803d;
+  --no: #dc2626;
+  --maybe: #b45309;
+  --reset: #be185d;
   --heart: rgba(189, 30, 89, 0.22);
   --card: #ffffff;
   --shadow: 0 20px 60px rgba(189, 30, 89, 0.18);
@@ -158,10 +160,6 @@ h1 {
   text-align: center;
 }
 
-.hint[hidden] {
-  display: none !important;
-}
-
 .buttons {
   display: flex;
   gap: 12px;
@@ -171,7 +169,9 @@ h1 {
   justify-content: center;
 }
 
-.buttons[hidden] {
+.hint[hidden],
+.buttons[hidden],
+.secret-overlay[hidden] {
   display: none !important;
 }
 
@@ -224,9 +224,9 @@ button {
   will-change: transform;
 }
 
-#yesButton { min-width: 120px; min-height: 44px; }
-
 #yesButton {
+  min-width: 120px;
+  min-height: 44px;
   max-width: min(80vw, 420px);
   max-height: 200px;
 }
@@ -267,10 +267,10 @@ button:disabled {
 
 #yesButton { background: var(--yes); }
 #noButton { background: var(--no); }
-#maybeButton { background: #f59e0b; }
+#maybeButton { background: var(--maybe); }
 
 #resetButton {
-  background: #f472b6;
+  background: var(--reset);
   font-size: 16px;
   padding: 10px 18px;
 }
@@ -471,13 +471,9 @@ button:disabled {
   z-index: 10;
 }
 
-.secret-overlay[hidden] {
-  display: none !important;
-}
-
 .secret-card {
-  background: var(--card);
-  color: inherit;
+  background: #ffffff;
+  color: #2b0f1b;
   border-radius: 16px;
   padding: 20px;
   max-width: 420px;
@@ -496,8 +492,18 @@ button:disabled {
   margin: 0 0 14px;
 }
 
+@media (prefers-color-scheme: dark) {
+  .secret-card {
+    background: #1d1218;
+    color: #f6dbe6;
+  }
+}
+
 .secret-close {
-  background: #ec4899;
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 2px solid #9d174d;
+  font-weight: 600;
   padding: 10px 16px;
   font-size: 16px;
 }

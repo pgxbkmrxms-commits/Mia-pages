@@ -26,6 +26,7 @@
   <meta name="twitter:description" content="Eine besondere Frage an eine besondere Person 💕">
   <meta name="twitter:image" content="https://pgxbkmrxms-commits.github.io/Mia-pages/images/giphy.gif">
   <title>Willst du meine Freundin sein?</title>
+  <link rel="preload" href="images/giphy.gif" as="image">
   <link rel="stylesheet" href="assets/mia-optimized.css">
 </head>
 <body class="gradient-background">
@@ -41,7 +42,16 @@
   </div>
   <main class="card" aria-labelledby="valentineQuestion" id="card">
     <div id="status" role="status" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
-    <img id="imageDisplay" src="images/giphy.gif" alt="Niedliche animierte Grafik zum Valentinstag" width="250" height="250" loading="eager" decoding="async" fetchpriority="high" />
+    <img
+      id="imageDisplay"
+      src="images/giphy.gif"
+      alt="Niedliche animierte Grafik zum Valentinstag"
+      width="250"
+      height="250"
+      loading="eager"
+      decoding="async"
+      fetchpriority="high"
+    >
     <h1 id="valentineQuestion">Willst du meine Freundin sein?</h1>
     <p class="subtext" id="subtext">Ein kleines Ja macht meinen Tag perfekt.</p>
     <p class="hint" id="hint">Tipp: Mit Y/N/P geht's noch schneller. <span aria-hidden="true">Oder wische nach rechts/links!</span></p>
@@ -55,13 +65,24 @@
     </div>
     <div class="secret-input-wrap">
       <label for="secretInput" class="visually-hidden">Geheimen Code eingeben</label>
-      <input id="secretInput" class="secret-input" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="16" placeholder="geheimer code…" aria-label="Geheimen Code eingeben" />
+      <input
+        id="secretInput"
+        class="secret-input"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+        maxlength="16"
+        placeholder="geheimer code…"
+        aria-label="Geheimen Code eingeben"
+      >
     </div>
   </main>
   <div id="secretOverlay" class="secret-overlay" hidden aria-hidden="true">
     <div id="secretCard" class="secret-card" role="dialog" aria-modal="true" aria-labelledby="secretTitle" aria-describedby="secretText">
       <h2 id="secretTitle">Du hast das geheime Level gefunden 💖</h2>
-      <p id="secretText">Du bist mein Lieblingsmensch. Für immer und jeden Tag ein bisschen mehr.</p>
+      <p id="secretText">Du bist mein Lieblingsmensch. Für immer und jeden Tag ein bisschen mehr.❤️</p>
       <button id="secretCloseButton" class="secret-close" type="button" aria-label="Geheime Nachricht schließen">Awww 🥰</button>
     </div>
   </div>

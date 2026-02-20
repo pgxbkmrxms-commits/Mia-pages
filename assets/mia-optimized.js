@@ -4,12 +4,6 @@ import { createTelemetry } from './mia-observability.mjs';
 // Configuration constants
 const CONFIG = {
   DEBUG: false,
-  BUTTON_GROW_WIDTH: 20,
-  BUTTON_GROW_HEIGHT: 20,
-  FONT_SIZE_INCREASE: 6,
-  MAX_BUTTON_WIDTH_FACTOR: 0.8,
-  MAX_BUTTON_HEIGHT: 200,
-  MAX_FONT_SIZE: 40,
   CONFETTI_TIMEOUT: 5000,
   PRELOAD_TIMEOUT: 2000,
   PRELOAD_FALLBACK: 100,
@@ -19,6 +13,8 @@ const CONFIG = {
   HAPTIC_MEDIUM: 20,
   HAPTIC_HEAVY: 50,
   SWIPE_THRESHOLD: 50,
+  SWIPE_FEEDBACK_MS: 300,
+  KEY_DEBOUNCE_MS: 200,
   STATE_MAX_AGE_MS: 3600000,
   STATUS_CLEAR_MS: 2800,
   SHAKE_RESET_DELAY_MS: 320,
@@ -42,6 +38,8 @@ const FOCUSABLE_SELECTOR = [
   'textarea:not([disabled])',
   '[tabindex]:not([tabindex="-1"])'
 ].join(', ');
+
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Haptic Feedback
 const hapticFeedback = (intensity = CONFIG.HAPTIC_LIGHT) => {
@@ -311,6 +309,29 @@ let statusEl = null;
 let heartsObserver = null;
 const getNextMaybeText = createShuffledCycler(maybeTexts);
 const pendingImageLoadHandlers = new WeakMap();
+const preloadImage = (src) => {
+  const img = new Image();
+  img.src = src;
+};
+
+const triggerTemporaryClass = (element, className, durationMs, { restart = false } = {}) => {
+  if (!element) {
+    return;
+  }
+
+  if (restart) {
+    element.classList.remove(className);
+    requestAnimationFrame(() => {
+      element.classList.add(className);
+    });
+  } else {
+    element.classList.add(className);
+  }
+
+  setTimeout(() => {
+    element.classList.remove(className);
+  }, durationMs);
+};
 
 const yesGrowClasses = Array.from({ length: maxNoClicks }, (_, index) => `yes-grow-${index + 1}`);
 
@@ -428,11 +449,7 @@ const handleNo = (yesButton, noButton, imageDisplay, card) => {
   noClickCount += 1;
   setImage(imageDisplay, imagePaths[noClickCount], imageAlts[noClickCount] || imageAlts[0]);
   if (card) {
-    card.classList.remove('shake');
-    requestAnimationFrame(() => {
-      card.classList.add('shake');
-      setTimeout(() => card.classList.remove('shake'), CONFIG.SHAKE_RESET_DELAY_MS);
-    });
+    triggerTemporaryClass(card, 'shake', CONFIG.SHAKE_RESET_DELAY_MS, { restart: true });
   }
   yesGrowStep = clamp(yesGrowStep + 1, 0, maxNoClicks);
   updateYesButton(yesButton);
@@ -449,12 +466,10 @@ const handleNo = (yesButton, noButton, imageDisplay, card) => {
   // Intelligentes Prefetch: Lade nächstes Bild und finale Bild vor
   const nextIndex = Math.min(noClickCount + 1, finalIndex);
   if (nextIndex > noClickCount) {
-    const img = new Image();
-    img.src = imagePaths[nextIndex];
+    preloadImage(imagePaths[nextIndex]);
   }
   if (nextIndex !== finalIndex) {
-    const finalImg = new Image();
-    finalImg.src = imagePaths[finalIndex];
+    preloadImage(imagePaths[finalIndex]);
   }
   // Konfetti-Preload nach 2 Nein-Clicks
   if (noClickCount >= 2 && !confettiLoading) {
@@ -474,8 +489,7 @@ const handleMaybe = (subtext, card, maybeButton) => {
   }
   setStatus(text);
   if (card) {
-    card.classList.add('swipe-feedback');
-    setTimeout(() => card.classList.remove('swipe-feedback'), 300);
+    triggerTemporaryClass(card, 'swipe-feedback', CONFIG.SWIPE_FEEDBACK_MS);
   }
 };
 
@@ -499,7 +513,7 @@ const handleYes = (valentineQuestion, responseButtons, imageDisplay, subtext, hi
     afterActions.hidden = false;
   }
   clearState();
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!prefersReducedMotion()) {
     loadConfetti()
       .then(() => {
         if (typeof confetti === 'function') {
@@ -536,8 +550,7 @@ const preloadOnFirstInteraction = () => {
   didPreload = true;
   const loadImages = () => {
     for (let i = 1; i < imagePaths.length; i += 1) {
-      const img = new Image();
-      img.src = imagePaths[i];
+      preloadImage(imagePaths[i]);
     }
   };
   if ('requestIdleCallback' in window) {
@@ -636,7 +649,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Intersection Observer for hearts animation
   const heartsContainer = document.querySelector('.hearts');
-  if (heartsContainer && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (heartsContainer && 'IntersectionObserver' in window && !prefersReducedMotion()) {
     heartsObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         heartsContainer.classList.toggle('paused', !entry.isIntersecting);
@@ -645,10 +658,9 @@ window.addEventListener('DOMContentLoaded', () => {
     heartsObserver.observe(heartsContainer);
   }
 
-  const firstNext = new Image();
-  firstNext.src = imagePaths[1];
+  preloadImage(imagePaths[1]);
 
-  imageDisplay.addEventListener('error', () => {
+  addListener(imageDisplay, 'error', () => {
     if (didFallback) return;
     didFallback = true;
     setImage(imageDisplay, imagePaths[finalIndex], 'Fallback-Bild');
@@ -689,7 +701,6 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   let lastKeyTime = 0;
-  const KEY_DEBOUNCE = 200;
 
   addListener(
     document,
@@ -726,7 +737,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
 
       const now = Date.now();
-      if (now - lastKeyTime < KEY_DEBOUNCE) {
+      if (now - lastKeyTime < CONFIG.KEY_DEBOUNCE_MS) {
         return;
       }
 
@@ -749,11 +760,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Page Visibility API - pause animations when tab is hidden
   addListener(document, 'visibilitychange', () => {
-    const hearts = document.querySelector('.hearts');
-    if (document.hidden && hearts) {
-      hearts.classList.add('paused');
-    } else if (hearts && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      hearts.classList.remove('paused');
+    if (document.hidden && heartsContainer) {
+      heartsContainer.classList.add('paused');
+    } else if (heartsContainer && !prefersReducedMotion()) {
+      heartsContainer.classList.remove('paused');
     }
   });
 
@@ -799,8 +809,7 @@ window.addEventListener('DOMContentLoaded', () => {
       // Swipe right for Yes, left for No
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > CONFIG.SWIPE_THRESHOLD) {
         hapticFeedback(CONFIG.HAPTIC_LIGHT);
-        card.classList.add('swipe-feedback');
-        setTimeout(() => card.classList.remove('swipe-feedback'), 300);
+        triggerTemporaryClass(card, 'swipe-feedback', CONFIG.SWIPE_FEEDBACK_MS);
 
         if (deltaX > 0) {
           yesButton.click();
@@ -835,7 +844,7 @@ window.addEventListener('DOMContentLoaded', () => {
       window.location.reload();
     });
 
-    window.addEventListener('load', () => {
+    addListener(window, 'load', () => {
       navigator.serviceWorker
         .register('./sw.js', { scope: './' })
         .then((registration) => {

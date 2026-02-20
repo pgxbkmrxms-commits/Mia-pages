@@ -6,8 +6,11 @@
   "scripts": {
     "prepare": "husky",
     "test": "npm run test:unit",
-    "test:unit": "node --test",
-    "test:e2e": "playwright test",
+    "test:unit": "node --test tests/mia-logic.test.mjs",
+    "test:e2e": "playwright test --grep-invert \"@visual|@a11y\"",
+    "test:a11y": "playwright test --grep @a11y",
+    "test:visual": "playwright test --grep @visual",
+    "test:visual:update": "playwright test --grep @visual --update-snapshots",
     "e2e:install": "playwright install --with-deps chromium",
     "lint:html": "html-validate",
     "check:sw": "node --check sw.js",
@@ -21,6 +24,7 @@
     "tests/**/*.mjs": "node --check"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "1.58.2",
     "html-validate": "10.8.0",
     "husky": "9.1.7",

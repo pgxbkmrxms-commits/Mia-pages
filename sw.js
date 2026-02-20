@@ -1,5 +1,5 @@
 // Service Worker for Offline Functionality
-const CACHE_NAME = 'mia-pages-v8';
+const CACHE_NAME = 'mia-pages-v9';
 const OFFLINE_PAGE = './mia-optimized.html';
 const NAVIGATION_NETWORK_TIMEOUT_MS = 4000;
 const PRECACHE_ASSETS = [
