@@ -37,7 +37,7 @@ jobs:
 
       - name: Detect changed HTML files
         id: changed-html
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v47
         with:
           files: |
             **/*.html
@@ -79,7 +79,7 @@ jobs:
 
       - name: Detect E2E-relevant changes
         id: changed-e2e
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v47
         with:
           files: |
             mia-optimized.html
@@ -154,7 +154,7 @@ jobs:
 
       - name: Detect Lighthouse-relevant changes
         id: changed-lh
-        uses: tj-actions/changed-files@v45
+        uses: tj-actions/changed-files@v47
         with:
           files: |
             mia-optimized.html
